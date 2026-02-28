@@ -1,13 +1,10 @@
 import mongoose from 'mongoose';
-import * as dotenv from 'dotenv';
-
-dotenv.config({ path: '.env' });
-
-if (!process.env.MONGODB_URI) {
-  console.log('🔴 No MongoDB URI found in .env');
-}
 
 const MONGODB_URI = process.env.MONGODB_URI as string;
+
+if (!MONGODB_URI) {
+  throw new Error('MONGODB_URI environment variable is not defined');
+}
 
 const connectDB = async () => {
   try {
@@ -15,12 +12,14 @@ const connectDB = async () => {
     
     await mongoose.connect(MONGODB_URI, {
       serverSelectionTimeoutMS: 5000,
-      connectTimeoutMS: 5000
+      connectTimeoutMS: 5000,
     });
-    console.log('🟢 MongoDB Connected Successfully');
+    
+    console.log('🟢 MongoDB Connected:', mongoose.connection.host);
   } catch (error) {
-    console.log('🔴 Error connecting to MongoDB:', error instanceof Error ? error.message : 'Unknown error');
-    throw new Error('Database connection failed. Please check your MongoDB Atlas IP whitelist.');
+    const message = error instanceof Error ? error.message : 'Unknown error';
+    console.error('🔴 MongoDB connection failed:', message);
+    throw new Error(`Database connection failed: ${message}`);
   }
 };
 

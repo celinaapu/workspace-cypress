@@ -19,7 +19,6 @@ const DashboardPage = async () => {
     redirect("/login");
   }
 
-  // Ensure ID is a string for query
   const userId = session?.user?.id || session?.user?.email || 'temp-id';
   if (!userId) {
     console.error("User ID is missing from session");
@@ -36,14 +35,12 @@ const DashboardPage = async () => {
     console.error("Subscription Error:", subscriptionError);
   }
 
-  // Fetch products for subscription modal
   const { data: products, error: productsError } = await getActiveProductsWithPrice();
   if (productsError) {
     console.error("Products Error:", productsError);
   }
 
   if (!workspace) {
-    // Ensure we have a valid user ID
     const userId = session?.user?.id || '';
     
     if (!userId) {
@@ -69,7 +66,6 @@ const DashboardPage = async () => {
     );
   }
 
-  // Use string conversion if _id is a MongoDB ObjectId
   redirect(`/dashboard/${workspace._id.toString()}`);
 };
 

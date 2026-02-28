@@ -17,20 +17,19 @@ export async function actionLoginUser({
   try {
     await connectDB();
 
-    // Find user by email
     const user = await User.findOne({ email });
     if (!user) {
       return { error: { message: "Invalid credentials", code: "401" } };
     }
 
-    // Compare password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return { error: { message: "Invalid credentials", code: "401" } };
     }
 
     return { success: true };
-  } catch (error) {
+  } catch (error: any) {
+    console.error("❌ Login Action Error:", error.message || error);
     return { error: { message: "Internal Server Error", code: "500" } };
   }
 }
@@ -40,24 +39,39 @@ export async function actionSignUpUser({
   password,
 }: z.infer<typeof FormSchema>) {
   try {
+    console.log("🚀 actionSignUpUser triggered:", {
+      email,
+      password: password ? "***" : "UNDEFINED",
+    });
+
+    if (!email || !password) {
+      return {
+        error: { message: "Email and password are required", code: "400" },
+      };
+    }
+
     await connectDB();
 
-    // Check if user already exists
     const userExists = await User.findOne({ email });
     if (userExists) {
       return { error: { message: "User already exists", code: "409" } };
     }
 
-    // Hash password before saving
     const hashedPassword = await bcrypt.hash(password, 10);
+    await User.create({ email, password: hashedPassword });
 
-    await User.create({
-      email,
-      password: hashedPassword,
-    });
-
+    console.log("✅ User created successfully in MongoDB");
     return { success: true };
-  } catch (error) {
-    return { error: { message: "Internal Server Error", code: "500" } };
+  } catch (error: any) {
+    console.error("💥 Critical Error in actionSignUpUser:", {
+      message: error.message,
+      stack: error.stack,
+    });
+    return {
+      error: {
+        message: error.message || "Internal Server Error",
+        code: "500",
+      },
+    };
   }
 }

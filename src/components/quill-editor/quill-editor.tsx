@@ -11,8 +11,6 @@ import React, {
 import "quill/dist/quill.snow.css";
 import { Button } from "../ui/button";
 import {
-  // deleteFile, // Function doesn't exist yet
-  // deleteFolder, // Function doesn't exist yet
   getFile,
   getFolderDetails,
   getWorkspaceDetails,
@@ -30,12 +28,10 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { Badge } from "../ui/badge";
 import Image from "next/image";
-// import { createClientComponentClient } from "@supabase/auth-helpers-nextjs";
 import EmojiPicker from "../global/emoji-picker";
 import BannerUpload from "../banner-upload/banner-upload";
 import { XCircleIcon } from "lucide-react";
 import { useSocket } from "@/lib/providers/socket-provider";
-// import { useSupabaseUser } from "@/lib/providers/supabase-user-provider";
 
 interface QuillEditorProps {
   dirDetails: File | Folder | Workspace;
@@ -43,23 +39,21 @@ interface QuillEditorProps {
   dirType: "workspace" | "folder" | "file";
 }
 var TOOLBAR_OPTIONS = [
-  ["bold", "italic", "underline", "strike"], // toggled buttons
+  ["bold", "italic", "underline", "strike"], 
   ["blockquote", "code-block"],
 
-  [{ header: 1 }, { header: 2 }], // custom button values
+  [{ header: 1 }, { header: 2 }],
   [{ list: "ordered" }, { list: "bullet" }],
-  [{ script: "sub" }, { script: "super" }], // superscript/subscript
-  [{ indent: "-1" }, { indent: "+1" }], // outdent/indent
-  [{ direction: "rtl" }], // text direction
-
-  [{ size: ["small", false, "large", "huge"] }], // custom dropdown
+  [{ script: "sub" }, { script: "super" }], 
+  [{ direction: "rtl" }], 
+  [{ size: ["small", false, "large", "huge"] }], 
   [{ header: [1, 2, 3, 4, 5, 6, false] }],
 
-  [{ color: [] }, { background: [] }], // dropdown with defaults from theme
+  [{ color: [] }, { background: [] }], 
   [{ font: [] }],
   [{ align: [] }],
 
-  ["clean"], // remove formatting button
+  ["clean"],
 ];
 
 const QuillEditor: React.FC<QuillEditorProps> = ({
@@ -67,12 +61,9 @@ const QuillEditor: React.FC<QuillEditorProps> = ({
   dirType,
   fileId,
 }) => {
-  // const supabase = createClientComponentClient();
   const { state, workspaceId, folderId, dispatch } = useAppState();
   const saveTimerRef = useRef<ReturnType<typeof setTimeout>>();
-  // const { user } = useSupabaseUser();
-  // Temporary placeholder user - this should come from NextAuth session
-  const user = { id: 'temp-user-id', email: 'temp@example.com' };
+  const user = { id: "temp-user-id", email: "temp@example.com" };
   const router = useRouter();
   const { socket, isConnected } = useSocket();
   const pathname = usePathname();
@@ -155,10 +146,11 @@ const QuillEditor: React.FC<QuillEditorProps> = ({
     return `${workspaceBreadCrumb} ${folderBreadCrumb} ${fileBreadCrumb}`;
   }, [state, pathname, workspaceId]);
 
-  //
-  const wrapperRef = useCallback(async (wrapper: any) => {
-    if (typeof window !== "undefined") {
-      if (wrapper === null) return;
+  const wrapperRef = useCallback((wrapper: HTMLDivElement | null) => {
+    if (typeof window === "undefined") return;
+    if (wrapper === null) return;
+
+    (async () => {
       wrapper.innerHTML = "";
       const editor = document.createElement("div");
       wrapper.append(editor);
@@ -175,7 +167,7 @@ const QuillEditor: React.FC<QuillEditorProps> = ({
         },
       });
       setQuill(q);
-    }
+    })();
   }, []);
 
   const restoreFileHandler = async () => {
@@ -185,7 +177,12 @@ const QuillEditor: React.FC<QuillEditorProps> = ({
       const fId = folderId as string;
       dispatch({
         type: "UPDATE_FILE",
-        payload: { file: { inTrash: "" }, fileId, folderId: fId, workspaceId: wsId },
+        payload: {
+          file: { inTrash: "" },
+          fileId,
+          folderId: fId,
+          workspaceId: wsId,
+        },
       });
       await updateFile({ inTrash: "" }, fileId);
     }
@@ -194,7 +191,11 @@ const QuillEditor: React.FC<QuillEditorProps> = ({
       const wsId = workspaceId as string;
       dispatch({
         type: "UPDATE_FOLDER",
-        payload: { folder: { inTrash: "" }, folderId: fileId, workspaceId: wsId },
+        payload: {
+          folder: { inTrash: "" },
+          folderId: fileId,
+          workspaceId: wsId,
+        },
       });
       await updateFolder({ inTrash: "" }, fileId);
     }
@@ -220,8 +221,6 @@ const QuillEditor: React.FC<QuillEditorProps> = ({
         type: "DELETE_FOLDER",
         payload: { folderId: fileId, workspaceId: wsId },
       });
-      // await deleteFolder(fileId);
-      // Temporarily disabled - function doesn't exist yet
       router.replace(`/dashboard/${workspaceId}`);
     }
   };
@@ -255,7 +254,12 @@ const QuillEditor: React.FC<QuillEditorProps> = ({
 
       dispatch({
         type: "UPDATE_FILE",
-        payload: { file: { iconId: icon }, workspaceId: wsId, folderId: fId, fileId },
+        payload: {
+          file: { iconId: icon },
+          workspaceId: wsId,
+          folderId: fId,
+          fileId,
+        },
       });
       await updateFile({ iconId: icon }, fileId);
     }
@@ -270,7 +274,12 @@ const QuillEditor: React.FC<QuillEditorProps> = ({
       const fId = folderId as string;
       dispatch({
         type: "UPDATE_FILE",
-        payload: { file: { bannerUrl: "" }, fileId, folderId: fId, workspaceId: wsId },
+        payload: {
+          file: { bannerUrl: "" },
+          fileId,
+          folderId: fId,
+          workspaceId: wsId,
+        },
       });
       // await supabase.storage.from("file-banners").remove([`banner-${fileId}`]);
       await updateFile({ bannerUrl: "" }, fileId);
@@ -280,7 +289,11 @@ const QuillEditor: React.FC<QuillEditorProps> = ({
       const wsId = workspaceId as string;
       dispatch({
         type: "UPDATE_FOLDER",
-        payload: { folder: { bannerUrl: "" }, folderId: fileId, workspaceId: wsId },
+        payload: {
+          folder: { bannerUrl: "" },
+          folderId: fileId,
+          workspaceId: wsId,
+        },
       });
       // await supabase.storage.from("file-banners").remove([`banner-${fileId}`]);
       await updateFolder({ bannerUrl: "" }, fileId);
@@ -411,43 +424,6 @@ const QuillEditor: React.FC<QuillEditorProps> = ({
       const contents = quill.getContents();
       const quillLength = quill.getLength();
       saveTimerRef.current = setTimeout(async () => {
-        // if (contents && quillLength !== 1 && fileId) {
-        //   if (dirType == 'workspace') {
-        //     dispatch({
-        //       type: 'UPDATE_WORKSPACE',
-        //       payload: {
-        //         workspace: { data: JSON.stringify(contents) },
-        //         workspaceId: fileId,
-        //       },
-        //     });
-        //     await updateWorkspace({ data: JSON.stringify(contents) }, fileId);
-        //   }
-        //   if (dirType == 'folder') {
-        //     if (!workspaceId) return;
-        //     dispatch({
-        //       type: 'UPDATE_FOLDER',
-        //       payload: {
-        //         folder: { data: JSON.stringify(contents) },
-        //         workspaceId,
-        //         folderId: fileId,
-        //       },
-        //     });
-        //     await updateFolder({ data: JSON.stringify(contents) }, fileId);
-        //   }
-        //   if (dirType == 'file') {
-        //     if (!workspaceId || !folderId) return;
-        //     dispatch({
-        //       type: 'UPDATE_FILE',
-        //       payload: {
-        //         file: { data: JSON.stringify(contents) },
-        //         workspaceId,
-        //         folderId: folderId,
-        //         fileId,
-        //       },
-        //     });
-        //     await updateFile({ data: JSON.stringify(contents) }, fileId);
-        //   }
-        // }
         setSaving(false);
       }, 850);
       socket.emit("send-changes", delta, fileId);
@@ -474,52 +450,6 @@ const QuillEditor: React.FC<QuillEditorProps> = ({
       socket.off("receive-changes", socketHandler);
     };
   }, [quill, socket, fileId]);
-
-  // Temporarily disabled real-time collaboration (Supabase-dependent)
-  // useEffect(() => {
-  //   if (!fileId || quill === null) return;
-  //   const room = supabase.channel(fileId);
-  //   const subscription = room
-  //     .on("presence", { event: "sync" }, () => {
-  //       const newState = room.presenceState();
-  //       const newCollaborators = Object.values(newState).flat() as any;
-  //       setCollaborators(newCollaborators);
-  //       if (user) {
-  //         const allCursors: any = [];
-  //         newCollaborators.forEach(
-  //           (collaborator: { id: string; email: string; avatar: string }) => {
-  //             if (collaborator.id !== user.id) {
-  //               const userCursor = quill.getModule("cursors");
-  //               userCursor.createCursor(
-  //                 collaborator.id,
-  //                 collaborator.email.split("@")[0],
-  //                 `#${Math.random().toString(16).slice(2, 8)}`,
-  //               );
-  //               allCursors.push(userCursor);
-  //             }
-  //           },
-  //         );
-  //         setLocalCursors(allCursors);
-  //       }
-  //     })
-  //     .subscribe(async (status) => {
-  //       if (status !== "SUBSCRIBED" || !user) return;
-  //       const response = await findUser(user.id);
-  //       if (!response) return;
-
-  //       room.track({
-  //         id: user.id,
-  //         email: user.email?.split("@")[0],
-  //         avatarUrl: response.avatarUrl
-  //           ? supabase.storage.from("avatars").getPublicUrl(response.avatarUrl)
-  //               .data.publicUrl
-  //           : "",
-  //       });
-  //     });
-  //   return () => {
-  //     supabase.removeChannel(room);
-  //   };
-  // }, [fileId, quill, supabase, user]);
 
   return (
     <>
