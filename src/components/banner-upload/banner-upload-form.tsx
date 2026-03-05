@@ -19,7 +19,7 @@ import { useToast } from "../ui/use-toast";
 
 interface BannerUploadFormProps {
   dirType: "workspace" | "file" | "folder";
-  id: string; // This is the MongoDB _id
+  id: string; 
 }
 
 const BannerUploadForm: React.FC<BannerUploadFormProps> = ({ dirType, id }) => {
@@ -44,7 +44,6 @@ const BannerUploadForm: React.FC<BannerUploadFormProps> = ({ dirType, id }) => {
     if (!file || !id) return;
 
     try {
-      // Upload banner using local file system
       const formData = new FormData();
       formData.append('banner', file);
       formData.append('id', id);

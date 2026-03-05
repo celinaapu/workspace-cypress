@@ -1,6 +1,4 @@
-// import { createServerComponentClient } from "@supabase/auth-helpers-nextjs";
 import React from "react";
-
 import { cookies } from "next/headers";
 import {
   getCollaboratingWorkspaces,
@@ -23,78 +21,70 @@ interface SidebarProps {
 }
 
 const Sidebar: React.FC<SidebarProps> = async ({ params, className }) => {
-  // const supabase = createServerComponentClient({ cookies });
-  // user - Using NextAuth instead
-  // const {
-  //   data: { user },
-  // } = await supabase.auth.getUser();
+  const user = { id: params.workspaceId };
 
-  // Temporarily use a placeholder user ID - this should come from NextAuth session
-  const user = { id: params.workspaceId }; // This should be replaced with proper session handling
-
-  //subscr
   const { data: subscriptionData, error: subscriptionError } =
     await getUserSubscriptionStatus(user.id);
 
-  //folders
   const { data: workspaceFolderData, error: foldersError } = await getFolders(
-    params.workspaceId,
+    params.workspaceId
   );
-  //error
+
   if (subscriptionError || foldersError) redirect("/dashboard");
 
   const [privateWorkspaces, collaboratingWorkspaces] = await Promise.all([
     getPrivateWorkspaces(user.id),
     getCollaboratingWorkspaces(user.id),
-    // getSharedWorkspaces(user.id), // Function doesn't exist yet
   ]);
 
-  //get all the different workspaces private collaborating shared
+  const allWorkspaces = [...privateWorkspaces, ...collaboratingWorkspaces];
+
+  const defaultWorkspace = allWorkspaces.find(
+    (workspace) => workspace._id?.toString() === params.workspaceId
+  );
+
   return (
     <aside
       className={twMerge(
-        "hidden sm:flex sm:flex-col w-[280px] shrink-0 p-4 md:gap-4 !justify-between",
-        className,
+        "hidden sm:flex sm:flex-col w-[280px] shrink-0 h-screen",
+        className
       )}
     >
-      <div>
-        <WorkspaceDropdown
-          privateWorkspaces={privateWorkspaces}
-          sharedWorkspaces={[]} // Temporarily empty
-          collaboratingWorkspaces={collaboratingWorkspaces}
-          defaultValue={[
-            ...privateWorkspaces,
-            ...collaboratingWorkspaces,
-          ].find((workspace) => workspace._id === params.workspaceId)}
-        />
-        <PlanUsage
-          foldersLength={workspaceFolderData?.length || 0}
-          subscription={subscriptionData}
-        />
-        <NativeNavigation myWorkspaceId={params.workspaceId} />
-        <ScrollArea
-          className="overflow-scroll relative
-          h-[450px]
-        "
-        >
-          <div
-            className="pointer-events-none 
-          w-full 
-          absolute 
-          bottom-0 
-          h-20 
-          bg-gradient-to-t 
-          from-background 
-          to-transparent 
-          z-40"
+      {/* Entire middle section scrolls — workspaces + nav + folders */}
+      <ScrollArea className="flex-1 min-h-0">
+        <div className="flex flex-col gap-4 p-4">
+          {/* Workspace list — always visible, no dropdown */}
+          <WorkspaceDropdown
+            privateWorkspaces={privateWorkspaces}
+            sharedWorkspaces={[]}
+            collaboratingWorkspaces={collaboratingWorkspaces}
+            defaultValue={defaultWorkspace}
           />
-          <FoldersDropdownList
-            workspaceFolders={workspaceFolderData || []}
-            workspaceId={params.workspaceId}
+
+          <PlanUsage
+            foldersLength={workspaceFolderData?.length || 0}
+            subscription={subscriptionData}
           />
-        </ScrollArea>
+
+          <NativeNavigation myWorkspaceId={params.workspaceId} />
+
+          {/* Folders */}
+          <div className="relative">
+            <div
+              className="pointer-events-none absolute bottom-0 left-0 right-0 h-8 
+              bg-gradient-to-t from-background to-transparent z-10"
+            />
+            <FoldersDropdownList
+              workspaceFolders={workspaceFolderData || []}
+              workspaceId={params.workspaceId}
+            />
+          </div>
+        </div>
+      </ScrollArea>
+
+      <div className="p-4 pt-2 shrink-0">
+        <UserCard subscription={subscriptionData} />
       </div>
-      <UserCard subscription={subscriptionData} />
     </aside>
   );
 };

@@ -2,6 +2,7 @@
 import { useAppState } from "@/lib/providers/state-provider";
 import { Workspace } from "@/lib/types";
 import React, { useEffect, useState } from "react";
+import { twMerge } from "tailwind-merge";
 import SelectedWorkspace from "./selected-workspace";
 import CustomDialogTrigger from "../global/custom-dialog-trigger";
 import WorkspaceCreator from "../global/workspace-creator";
@@ -13,6 +14,8 @@ interface WorkspaceDropdownProps {
   defaultValue: Workspace | undefined;
 }
 
+const toStr = (id: any): string => (id ? id.toString() : "");
+
 const WorkspaceDropdown: React.FC<WorkspaceDropdownProps> = ({
   privateWorkspaces,
   collaboratingWorkspaces,
@@ -21,7 +24,6 @@ const WorkspaceDropdown: React.FC<WorkspaceDropdownProps> = ({
 }) => {
   const { dispatch, state } = useAppState();
   const [selectedOption, setSelectedOption] = useState(defaultValue);
-  const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     if (!state.workspaces.length) {
@@ -32,131 +34,98 @@ const WorkspaceDropdown: React.FC<WorkspaceDropdownProps> = ({
             ...privateWorkspaces,
             ...sharedWorkspaces,
             ...collaboratingWorkspaces,
-          ].map((workspace) => ({ ...workspace, id: workspace._id, folders: [] })),
+          ].map((workspace) => ({
+            ...workspace,
+            id: toStr(workspace._id ?? workspace.id),
+            folders: [],
+          })),
         },
       });
     }
-  }, [privateWorkspaces, collaboratingWorkspaces, sharedWorkspaces]);
-
-  const handleSelect = (option: Workspace) => {
-    setSelectedOption(option);
-    setIsOpen(false);
-  };
+  }, [privateWorkspaces, collaboratingWorkspaces, sharedWorkspaces, dispatch, state.workspaces.length]);
 
   useEffect(() => {
-    const findSelectedWorkspace = state.workspaces.find(
-      (workspace) => workspace.id === defaultValue?.id,
+    const defaultId = toStr(defaultValue?._id ?? defaultValue?.id);
+    if (!defaultId) return;
+
+    const fromState = state.workspaces.find(
+      (w) => toStr(w._id ?? w.id) === defaultId
     );
-    if (findSelectedWorkspace) setSelectedOption(findSelectedWorkspace);
-  }, [state, defaultValue]);
+    if (fromState) { setSelectedOption(fromState); return; }
+
+    const fromProps = [
+      ...privateWorkspaces,
+      ...sharedWorkspaces,
+      ...collaboratingWorkspaces,
+    ].find((w) => toStr(w._id ?? w.id) === defaultId);
+
+    if (fromProps) setSelectedOption(fromProps);
+  }, [state.workspaces, defaultValue, privateWorkspaces, sharedWorkspaces, collaboratingWorkspaces]);
+
+  const handleSelect = (option: Workspace) => setSelectedOption(option);
+
+  const sorted = (list: Workspace[]) =>
+    [...list].sort((a, b) => (a.title ?? "").localeCompare(b.title ?? ""));
+
+  const Section = ({ label, workspaces }: { label: string; workspaces: Workspace[] }) => (
+    <div className="mb-3">
+      <p className="text-muted-foreground text-xs font-medium uppercase tracking-wider mb-1 px-1">
+        {label}
+      </p>
+      <hr className="mb-1 border-muted" />
+      {workspaces.length ? (
+        sorted(workspaces).map((option) => (
+          <div
+            key={toStr(option._id)}
+            className={twMerge(
+              "rounded-md transition-colors",
+              toStr(option._id) === toStr(selectedOption?._id ?? selectedOption?.id)
+                ? "bg-muted/50"
+                : "hover:bg-muted/30"
+            )}
+          >
+            <SelectedWorkspace workspace={option} onClick={handleSelect} />
+          </div>
+        ))
+      ) : (
+        <p className="text-xs text-muted-foreground px-1 py-1 italic">
+          No {label.toLowerCase()} workspaces
+        </p>
+      )}
+    </div>
+  );
 
   return (
-    <div
-      className=" relative inline-block
-      text-left
-  "
-    >
-      <div>
-        <span onClick={() => setIsOpen(!isOpen)}>
-          {selectedOption ? (
+    <div className="w-full flex flex-col">
+      {/* Active workspace shown at top */}
+      {selectedOption && (
+        <div className="mb-3 px-1">
+          <p className="text-muted-foreground text-xs uppercase tracking-wider mb-1">
+            Current Workspace
+          </p>
+          <div className="rounded-md bg-muted/40 border border-muted">
             <SelectedWorkspace workspace={selectedOption} />
-          ) : (
-            "Select a workspace"
-          )}
-        </span>
-      </div>
-      {isOpen && (
-        <div
-          className="origin-top-right
-          absolute
-          w-full
-          rounded-md
-          shadow-md
-          z-50
-          h-[190px]
-          bg-black/10
-          backdrop-blur-lg
-          group
-          overflow-scroll
-          border-[1px]
-          border-muted
-      "
-        >
-          <div className="rounded-md flex flex-col">
-            <div className="!p-2">
-              {!!privateWorkspaces.length && (
-                <>
-                  <p className="text-muted-foreground">Private</p>
-                  <hr></hr>
-                  {privateWorkspaces.map((option) => (
-                    <SelectedWorkspace
-                      key={option._id}
-                      workspace={option}
-                      onClick={handleSelect}
-                    />
-                  ))}
-                </>
-              )}
-              {!!sharedWorkspaces.length && (
-                <>
-                  <p className="text-muted-foreground">Shared</p>
-                  <hr />
-                  {sharedWorkspaces.map((option) => (
-                    <SelectedWorkspace
-                      key={option._id}
-                      workspace={option}
-                      onClick={handleSelect}
-                    />
-                  ))}
-                </>
-              )}
-              {!!collaboratingWorkspaces.length && (
-                <>
-                  <p className="text-muted-foreground">Collaborating</p>
-                  <hr />
-                  {collaboratingWorkspaces.map((option) => (
-                    <SelectedWorkspace
-                      key={option._id}
-                      workspace={option}
-                      onClick={handleSelect}
-                    />
-                  ))}
-                </>
-              )}
-            </div>
-            <CustomDialogTrigger
-              header="Create A Workspace"
-              content={<WorkspaceCreator />}
-              description="Workspaces give you the power to collaborate with others. You can change your workspace privacy settings after creating the workspace too."
-            >
-              <div
-                className="flex 
-              transition-all 
-              hover:bg-muted 
-              justify-center 
-              items-center 
-              gap-2 
-              p-2 
-              w-full"
-              >
-                <article
-                  className="text-slate-500 
-                rounded-full
-                 bg-slate-800 
-                 w-4 
-                 h-4 
-                 flex 
-                 items-center 
-                 justify-center"
-                >
-                  +
-                </article>
-                Create workspace
-              </div>
-            </CustomDialogTrigger>
           </div>
         </div>
       )}
+
+      {/* All sections always visible — no dropdown */}
+      <Section label="Private" workspaces={privateWorkspaces} />
+      <Section label="Shared" workspaces={sharedWorkspaces} />
+      <Section label="Collaborating" workspaces={collaboratingWorkspaces} />
+
+      <CustomDialogTrigger
+        header="Create A Workspace"
+        content={<WorkspaceCreator />}
+        description="Workspaces give you the power to collaborate with others. You can change your workspace privacy settings after creating the workspace too."
+      >
+        <div className="flex transition-all hover:bg-muted rounded-md justify-center items-center gap-2 p-2 w-full mt-1 border border-dashed border-muted cursor-pointer">
+          <article className="text-slate-500 rounded-full bg-slate-800 w-4 h-4 flex items-center justify-center text-xs">
+            +
+          </article>
+          <span className="text-sm text-muted-foreground">Create workspace</span>
+        </div>
+      </CustomDialogTrigger>
     </div>
   );
 };
