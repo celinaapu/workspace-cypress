@@ -4,14 +4,18 @@ import React from "react";
 
 interface LayoutProps {
   children: React.ReactNode;
-  params: any;
 }
 
-const Layout: React.FC<LayoutProps> = async ({ children, params }) => {
+const Layout = async ({ children }: LayoutProps) => {
   const { data: products, error } = await getActiveProductsWithPrice();
-  if (error) throw new Error();
+
+  if (error || !products) {
+    console.error("Database Fetch Error:", error);
+    throw new Error("Could not load products. Please check server logs.");
+  }
+
   return (
-    <main className="flex over-hidden h-full">
+    <main className="flex overflow-hidden h-full"> 
       <SubscriptionModalProvider products={products}>
         {children}
       </SubscriptionModalProvider>
