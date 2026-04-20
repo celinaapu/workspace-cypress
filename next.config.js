@@ -23,16 +23,19 @@
 
 // module.exports = nextConfig;
 
-
-cat > next.config.js << 'EOF'
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  experimental: {
+    serverActions: {
+      bodySizeLimit: '6mb', // Helps with the Netlify upload limit
+    },
+  },
   images: {
     remotePatterns: [
       {
         protocol: 'https',
         hostname: 'res.cloudinary.com',
-        pathname: '/**',
+        pathname: '/**', // This is safer and covers all folders
       },
     ],
   },
@@ -44,5 +47,5 @@ const nextConfig = {
     return config;
   },
 };
+
 module.exports = nextConfig;
-EOF
